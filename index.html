@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hafalan Urutan Alfabet → Angka</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Game untuk menghafalkan urutan alfabet menjadi angka (A=1, B=2, ..., Z=26) dan sebaliknya.">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Hafalan Urutan Alfabet → Angka</h1>
+            <p class="subtitle">Latihan cepat mengubah huruf menjadi nomor urutan dan sebaliknya</p>
+        </header>
+
+        <section id="config-section" class="card">
+            <h2>Pengaturan</h2>
+
+            <div class="row">
+                <div class="field-group">
+                    <label class="label">Mode latihan</label>
+                    <div class="radio-list">
+                        <label class="radio"><input type="radio" name="mode" value="l2n" checked> Huruf → Angka</label>
+                        <label class="radio"><input type="radio" name="mode" value="n2l"> Angka → Huruf</label>
+                        <label class="radio"><input type="radio" name="mode" value="mix"> Campuran</label>
+                        <label class="radio"><input type="radio" name="mode" value="grid"> Grid (Lengkap)</label>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label class="label">Rentang huruf</label>
+                    <div class="range">
+                        <div>
+                            <span class="small">Dari</span>
+                            <select id="startLetter" class="input"></select>
+                        </div>
+                        <div>
+                            <span class="small">Sampai</span>
+                            <select id="endLetter" class="input"></select>
+                        </div>
+                    </div>
+                    <p class="hint">Contoh: A–Z untuk semua huruf, atau C–M untuk subset tertentu.</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field-group">
+                    <label class="label" for="numQuestions">Jumlah soal</label>
+                    <input type="number" id="numQuestions" class="input" min="1" max="200" value="10" inputmode="numeric" autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label class="label">Opsi</label>
+                    <div class="checkbox-list">
+                        <label class="checkbox"><input type="checkbox" id="ignoreAccents" checked> Abaikan kapitalisasi (a=A)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field-group">
+                    <label class="label">Jenis soal</label>
+                    <div class="radio-list">
+                        <label class="radio"><input type="radio" name="unit" value="single" checked> Tunggal</label>
+                        <label class="radio"><input type="radio" name="unit" value="sequence"> Beberapa huruf/angka</label>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="label" for="sequenceLength">Panjang urutan</label>
+                    <input type="number" id="sequenceLength" class="input" min="2" max="12" value="4" inputmode="numeric" disabled>
+                    <p class="hint">Digunakan saat memilih "Beberapa".</p>
+                </div>
+            </div>
+
+            <div id="grid-options-row" class="row hidden">
+                <div class="field-group">
+                    <label class="label">Urutan grid</label>
+                    <div class="radio-list">
+                        <label class="radio"><input type="radio" name="gridOrder" value="ordered" checked> Urut</label>
+                        <label class="radio"><input type="radio" name="gridOrder" value="shuffled"> Acak</label>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="label">Ditanyakan</label>
+                    <div class="radio-list">
+                        <label class="radio"><input type="radio" name="gridAsk" value="l2n" checked> Huruf → Angka</label>
+                        <label class="radio"><input type="radio" name="gridAsk" value="n2l"> Angka → Huruf</label>
+                    </div>
+                    <p class="hint">Mode Grid mengisi semua sel sekaligus seperti tabel indeks.</p>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="startBtn" class="btn primary">Mulai</button>
+                <button id="resetBtn" class="btn">Reset</button>
+                <button id="openIndexBtnConfig" class="btn">Tabel Indeks</button>
+            </div>
+
+            <div id="config-error" class="error hidden"></div>
+        </section>
+
+        <section id="game-section" class="card hidden">
+            <div class="game-header">
+                <div id="progress">Soal 1/10</div>
+                <div id="score">Benar: 0</div>
+            </div>
+            <div class="problem">
+                <div id="promptLabel" class="prompt-label">Huruf</div>
+                <div id="promptValue" class="prompt-value">A</div>
+            </div>
+            <div class="answer-row">
+                <input id="answer" class="answer-input" type="number" step="1" inputmode="numeric" autocomplete="off" placeholder="jawaban…">
+            </div>
+            <div id="gridContainer" class="index-table-wrap hidden"></div>
+            <div class="actions">
+                <button id="submitBtn" class="btn primary">Jawab</button>
+                <button id="skipBtn" class="btn">Lewati</button>
+                <button id="endBtn" class="btn danger">Akhiri</button>
+                <button id="openIndexBtnGame" class="btn">Tabel Indeks</button>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </section>
+
+        <section id="summary-section" class="card hidden">
+            <h2>Rekap</h2>
+            <div id="summary-stats" class="summary-stats"></div>
+            <div id="review" class="review"></div>
+            <div class="actions">
+                <button id="restartBtn" class="btn primary">Main Lagi</button>
+                <button id="backToConfigBtn" class="btn">Kembali ke Pengaturan</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="indexModal" class="modal-backdrop hidden" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="indexModalTitle">
+            <div class="modal-header">
+                <h3 id="indexModalTitle">Tabel Indeks Alfabet</h3>
+                <button id="closeIndexBtn" class="btn">Tutup</button>
+            </div>
+            <div class="modal-content">
+                <div id="indexTableContainer" class="index-table-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <noscript>Aktifkan JavaScript untuk memainkan game ini.</noscript>
+    </body>
+    </html>
+
+
