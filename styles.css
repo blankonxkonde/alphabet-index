@@ -138,6 +138,17 @@ body {
 .grid-number { color: var(--muted); font-size: 12px; }
 .grid-input { width: 100%; text-align: center; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: var(--text); }
 
+/* Grid game: avoid inner scroll + keep inputs readable on narrow screens */
+#gridContainer.index-table-wrap { overflow: visible; max-height: none; }
+#gridContainer .index-cell { padding: 6px; }
+#gridContainer .grid-letter { font-size: 16px; }
+#gridContainer .grid-input { padding: 6px 4px; }
+
+/* Remove number spinners so 2-digit values don't get clipped in tight grid cells */
+.grid-input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+.grid-input[type="number"]::-webkit-outer-spin-button,
+.grid-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
 @media (max-width: 520px) {
   .prompt-value { font-size: 32px; }
   .index-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
