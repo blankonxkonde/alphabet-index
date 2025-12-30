@@ -3,6 +3,7 @@
 
     // Alphabet helpers
     const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)); // A-Z
+    const GRID_COLS = 5; // keep in sync with .index-grid { grid-template-columns: repeat(5, ...) }
     const NATO_PHONETIC = {
         A: 'Alpha',
         B: 'Bravo',
@@ -189,6 +190,7 @@
     let currentIndex = 0;
     let numCorrect = 0;
     let modeAtStart = 'l2n';
+    let gridNavCleanup = null;
 
     // Index modal
     function renderIndexGrid() {
@@ -283,6 +285,12 @@
     }
 
     function renderQuestion() {
+        // Remove any previously installed grid keyboard nav
+        if (typeof gridNavCleanup === 'function') {
+            try { gridNavCleanup(); } catch (_) {}
+            gridNavCleanup = null;
+        }
+
         const q = questions[currentIndex];
         dom.progress.textContent = `Soal ${currentIndex + 1}/${questions.length}`;
         dom.score.textContent = `Benar: ${numCorrect}`;
@@ -319,6 +327,7 @@
                     input.type = 'number';
                     input.setAttribute('inputmode', 'numeric');
                     input.dataset.expected = String(i);
+                    input.dataset.gridIndex = String(idx);
                     bottom.appendChild(input);
                 } else {
                     top.className = 'grid-number';
@@ -329,6 +338,7 @@
                     input.setAttribute('inputmode', 'text');
                     input.setAttribute('maxlength', '1');
                     input.dataset.expected = L;
+                    input.dataset.gridIndex = String(idx);
                     bottom.appendChild(input);
                 }
 
@@ -339,6 +349,52 @@
             });
             dom.gridContainer.innerHTML = '';
             dom.gridContainer.appendChild(grid);
+
+            // Keyboard navigation (arrow keys) across grid cells
+            gridNavCleanup = (function installGridArrowNavigation(container, cols) {
+                const handler = (e) => {
+                    const key = e.key;
+                    if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'ArrowUp' && key !== 'ArrowDown') return;
+
+                    const target = e.target;
+                    if (!(target instanceof HTMLInputElement)) return;
+                    if (!target.classList.contains('grid-input')) return;
+
+                    // Prevent number inputs from increment/decrementing and stop caret movement;
+                    // instead move focus between cells like a spreadsheet.
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const idx = Number(target.dataset.gridIndex);
+                    if (!Number.isInteger(idx) || idx < 0) return;
+
+                    const inputs = Array.from(container.querySelectorAll('.grid-input'));
+                    if (!inputs.length) return;
+
+                    const row = Math.floor(idx / cols);
+                    const col = idx % cols;
+                    let nextIdx = -1;
+
+                    if (key === 'ArrowLeft') {
+                        if (col > 0) nextIdx = row * cols + (col - 1);
+                    } else if (key === 'ArrowRight') {
+                        if (col < cols - 1) nextIdx = row * cols + (col + 1);
+                    } else if (key === 'ArrowUp') {
+                        if (row > 0) nextIdx = (row - 1) * cols + col;
+                    } else if (key === 'ArrowDown') {
+                        nextIdx = (row + 1) * cols + col;
+                    }
+
+                    if (nextIdx < 0 || nextIdx >= inputs.length) return;
+                    const next = inputs[nextIdx];
+                    if (!next || next.disabled) return;
+                    next.focus();
+                    try { next.select(); } catch (_) {}
+                };
+
+                container.addEventListener('keydown', handler);
+                return () => container.removeEventListener('keydown', handler);
+            })(dom.gridContainer, GRID_COLS);
             return;
         } else if (q.type === 'l2n') {
             dom.promptLabel.textContent = 'Huruf';
